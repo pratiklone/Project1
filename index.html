@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Snake Game</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: lightgreen;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        color: #333;
+        flex-direction: column;
+      }
+
+      canvas {
+        background-color: #fff;
+        border: 1px solid #333;
+      }
+
+      .score {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        font-size: 24px;
+        font-weight: bold;
+      }
+
+      button {
+        padding: 10px 20px;
+        font-size: 16px;
+        margin-top: 20px;
+        cursor: pointer;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+      }
+
+      button:hover {
+        background-color: #45a049;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="score">Score: 0</div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <button id="startButton">Start Game</button>
+
+    <script>
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+      const scale = 20; // Size of each block in the grid
+      const rows = canvas.height / scale;
+      const columns = canvas.width / scale;
+
+      let snake;
+      let mango;
+      let score;
+      let dx, dy;
+      let gameInterval;
+      let gameStarted = false;
+
+      // Initialize the game
+      function init() {
+        snake = [{ x: 9 * scale, y: 9 * scale }];
+        score = 0;
+        dx = scale; // Start moving to the right
+        dy = 0; // No vertical movement
+        createMango();
+        document.addEventListener("keydown", changeDirection);
+        gameStarted = true;
+        document.getElementById("startButton").disabled = true;
+        gameLoop();
+      }
+
+      // Draw the game elements
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+
+        // Draw the snake
+        for (let i = 0; i < snake.length; i++) {
+          ctx.fillStyle = i === 0 ? "green" : "darkgreen"; // Head is a different color
+          ctx.fillRect(snake[i].x, snake[i].y, scale, scale);
+        }
+
+        // Draw the mango
+        ctx.fillStyle = "orange";
+        ctx.fillRect(mango.x, mango.y, scale, scale);
+
+        // Draw the score
+        document.querySelector(".score").textContent = "Score: " + score;
+      }
+
+      // Move the snake
+      function move() {
+        const head = { ...snake[0] };
+
+        // Check if the snake eats the mango
+        if (head.x === mango.x && head.y === mango.y) {
+          score++;
+          createMango();
+          snake.push({});
+        }
+
+        // Update the head position
+        head.x += dx;
+        head.y += dy;
+
+        // Check for collisions with walls or self
+        if (
+          head.x < 0 ||
+          head.x >= canvas.width ||
+          head.y < 0 ||
+          head.y >= canvas.height ||
+          collision(head)
+        ) {
+          return gameOver();
+        }
+
+        // Add new head to the snake
+        snake.unshift(head);
+
+        // Remove the last element (tail) unless eating mango
+        if (!(head.x === mango.x && head.y === mango.y)) {
+          snake.pop();
+        }
+      }
+
+      // Check for collisions with itself
+      function collision(head) {
+        for (let i = 1; i < snake.length; i++) {
+          if (head.x === snake[i].x && head.y === snake[i].y) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      // Create a new mango at a random position
+      function createMango() {
+        const x = Math.floor(Math.random() * rows) * scale;
+        const y = Math.floor(Math.random() * columns) * scale;
+        mango = { x, y };
+      }
+
+      // Change the direction of the snake
+      function changeDirection(event) {
+        if (event.key === "ArrowUp" && dy === 0) {
+          dx = 0;
+          dy = -scale;
+        } else if (event.key === "ArrowDown" && dy === 0) {
+          dx = 0;
+          dy = scale;
+        } else if (event.key === "ArrowLeft" && dx === 0) {
+          dx = -scale;
+          dy = 0;
+        } else if (event.key === "ArrowRight" && dx === 0) {
+          dx = scale;
+          dy = 0;
+        }
+      }
+
+      // Update the game state
+      function gameLoop() {
+        if (gameStarted) {
+          move();
+          draw();
+          gameInterval = setTimeout(gameLoop, 150); // Slow down the speed by increasing the timeout (150ms delay)
+        }
+      }
+
+      // End the game
+      function gameOver() {
+        alert("Game Over! Final Score: " + score);
+        clearTimeout(gameInterval);
+        document.getElementById("startButton").disabled = false;
+        gameStarted = false;
+      }
+
+      // Start the game by clicking the Start button
+      document
+        .getElementById("startButton")
+        .addEventListener("click", function () {
+          if (!gameStarted) {
+            init();
+          }
+        });
+    </script>
+  </body>
+</html>
